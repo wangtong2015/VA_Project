@@ -11,7 +11,8 @@ import torch
 import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
 
-import models
+import model_2 as models
+#import models
 from dataset import VideoFeatDataset as dset
 from tools.config_tools import Config
 from tools import utils

@@ -13,7 +13,7 @@ import torch.backends.cudnn as cudnn
 import torch.optim as optim
 from torch.autograd import Variable
 
-import models
+import model_2 as models
 from dataset import VideoFeatDataset as dset
 from tools.config_tools import Config
 from tools import utils
