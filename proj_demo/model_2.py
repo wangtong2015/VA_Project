@@ -103,7 +103,7 @@ class VAMetric(nn.Module):
         afeat = afeat.contiguous()
         afeat = afeat.view(-1,256)
         afeat = self.a_BN_3(afeat)
-        afeat = self.a_fc(vfeat)
+        afeat = self.a_fc(afeat)
 
         return F.pairwise_distance(vfeat, afeat)
 class ContrastiveLoss(torch.nn.Module):

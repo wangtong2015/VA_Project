@@ -68,7 +68,7 @@ class VAMetric(nn.Module):
         self.v_inception_5_b = inception(in_channels=832, num_1=384, num_3_1=192, num_3=384, num_5_1=48, num_5=128, num_m=128) #batch * 1024 * 64 * 8
         self.v_avgpool_5 = nn.AvgPool2d(kernel_size=(64,8))      #batch * 1024 * 1 * 1
         self.v_FC = nn.Linear(in_features=1024, out_features=512)
-        self.v_BN_3 = nn.BatchNorm1d(512)
+        self.v_BN_3 = nn.BatchNorm1d(1024)
         ## add some short cut at 4_a and 4_d stage
         self.v_shortcut_1_cov1 = nn.Conv2d(in_channels=512, kernel_size=(1,1), out_channels=1024)  #batch * 1024 * 128 * 15
         self.v_shortcut_1_avgpool = nn.AvgPool2d(kernel_size=(128,15))   #batch * 1024 * 128 * 15
@@ -94,7 +94,7 @@ class VAMetric(nn.Module):
         self.a_inception_5_b = inception(in_channels=416, num_1=192, num_3_1=96, num_3=192, num_5_1=24, num_5=64, num_m=64) #batch * 512 * 8 * 8
         self.a_avgpool_5 = nn.AvgPool2d(kernel_size=(8,8))      #batch * 512 * 2 * 2
         self.a_FC = nn.Linear(in_features=512, out_features=512)
-        self.a_BN_3 = nn.BatchNorm1d(1024)
+        self.a_BN_3 = nn.BatchNorm1d(512)
         ## add some short cut at 4_a and 4_d stage
         self.a_shortcut_1_cov1 = nn.Conv2d(in_channels=256, kernel_size=(1,1), out_channels=512)  #batch * 512 * 16 * 15
         self.a_shortcut_1_avgpool = nn.AvgPool2d(kernel_size=(16,15))                             #batch * 512 * 1 * 1
@@ -137,7 +137,7 @@ class VAMetric(nn.Module):
         vfeat_shortcut_2 = vfeat_shortcut_2.view(-1,1024)
         vfeat = vfeat + 0.3*vfeat_shortcut_1 + 0.3*vfeat_shortcut_2
         vfeat = self.v_BN_3(vfeat)
-        vfeat = F.dropout(p=0.4, training=True)      #attention::change this to False when eveluate
+        vfeat = F.dropout(p=0.4,input=vfeat, training=True)      #attention::change this to False when eveluate
         vfeat = self.v_FC(vfeat)
 
         afeat = afeat.contiguous()
@@ -176,7 +176,7 @@ class VAMetric(nn.Module):
         afeat_shortcut_2 = afeat_shortcut_2.view(-1,512)
         afeat = afeat + 0.3*afeat_shortcut_1 + 0.3*afeat_shortcut_2
         afeat = self.a_BN_3(afeat)
-        afeat = F.dropout(p=0.4, training=True)
+        afeat = F.dropout(p=0.4,input=afeat, training=True)
         afeat = self.a_FC(afeat)
         return F.pairwise_distance(vfeat, afeat)
 class ContrastiveLoss(torch.nn.Module):
