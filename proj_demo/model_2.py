@@ -43,7 +43,7 @@ class inception(nn.Module):            # a inception block
         X_4 = self.BN_4_2(X_4)
 
         X = torch.cat((X, X_2, X_3, X_4), 1)
-        X = F.relu(X)
+        X = F.leaky_relu(X)
         return X
 class VAMetric(nn.Module):
     def __init__(self):
@@ -79,11 +79,11 @@ class VAMetric(nn.Module):
         vfeat = vfeat.view(vfeat.size(0), 1, vfeat.size(2), vfeat.size(1))
         vfeat = self.v_cov_1(vfeat)
         vfeat = self.v_BN_1(vfeat)
-        vfeat = F.relu(vfeat)
+        vfeat = F.leaky_relu(vfeat)
         vfeat = self.v_maxpool_1(vfeat)
         vfeat = self.v_cov_2(vfeat)
         vfeat = self.v_BN_2(vfeat)
-        vfeat = F.relu(vfeat)
+        vfeat = F.leaky_relu(vfeat)
         vfeat = self.v_maxpool_2(vfeat)
         vfeat = self.v_inception(vfeat)
         vfeat = self.v_avgpool(vfeat)
@@ -96,11 +96,11 @@ class VAMetric(nn.Module):
         afeat = afeat.view(afeat.size(0), 1, afeat.size(2), afeat.size(1))
         afeat = self.a_cov_1(afeat)
         afeat = self.a_BN_1(afeat)
-        afeat = F.relu(afeat)
+        afeat = F.leaky_relu(afeat)
         afeat = self.a_maxpool_1(afeat)
         afeat = self.a_cov_2(afeat)
         afeat = self.a_BN_2(afeat)
-        afeat = F.relu(afeat)
+        afeat = F.leaky_relu(afeat)
         afeat = self.a_maxpool_2(afeat)
         afeat = self.a_inception(afeat)
         afeat = self.a_avgpool(afeat)
