@@ -69,7 +69,11 @@ class VAMetric(nn.Module):
         self.a_avgpool = nn.AvgPool2d(kernel_size=(8,8))        #batch*256*1*1
         self.a_fc = nn.Linear(256,256)
         self.a_BN_3 = nn.BatchNorm1d(256)
-
+    def init_params(self):
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform(m.weight)
+                nn.init.constant(m.bias, 0)
     def forward(self, vfeat, afeat):
         vfeat = vfeat.contiguous()
         vfeat = vfeat.view(vfeat.size(0), 1, vfeat.size(2), vfeat.size(1))
