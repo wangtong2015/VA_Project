@@ -1,5 +1,5 @@
-cuda: True
-ngpu: 1
+cuda: False
+ngpu: 0
 gpu_id: '0'
 model: 'VAMetric'
 init_model: ''
