@@ -120,7 +120,7 @@ class ContrastiveLoss(torch.nn.Module):
         self.margin = margin
 
     def forward(self, dist, label):
-        loss = torch.mean((1-label) * torch.pow(dist, 2) +
-                (label) * torch.pow(torch.clamp(self.margin - dist, min=0.0), 2))
+        loss = torch.mean((1-label) * torch.pow(dist, 2).squeeze() +
+                (label) * torch.pow(torch.clamp(self.margin - dist, min=0.0), 2).squeeze())
 
         return loss
