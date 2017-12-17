@@ -2,7 +2,7 @@ cuda: False
 ngpu: 0
 gpu_id: '0'
 model: 'VAMetric'
-init_model: ''
+init_model: 'checkpoints/VAMetric_state_epoch15.pth'
 data_dir: './Train'         # replace it with your data path
 flist: './filelists/train_filelist.txt'
 workers: 4

@@ -2,10 +2,10 @@ cuda: False
 ngpu: 0
 gpu_id: '0'
 model: 'VAMetric'
-init_model: './checkpoints/VAMetric_state_epoch30.pth'
+init_model: './checkpoints/VAMetric_state_epoch40.pth'
 data_dir: './Train'     # Your dataset path
-video_flist: './filelists/Video_Name_List.txt'
-audio_flist: './filelists/Audio_Name_List.txt'
+video_flist: './filelists/Video_Name_List_1.txt'
+audio_flist: './filelists/Audio_Name_List_1.txt'
 workers: 4
 batchSize: 40
 checkpoint_folder: './checkpoints'
