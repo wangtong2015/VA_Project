@@ -3,19 +3,19 @@ import torch.nn as nn
 from torch.autograd import Variable
 import torch.nn.functional as F
 
-class Fire(nn.module):
-    def __init__(self, in_channels, squeeze_channels, expand1x1_channels, expand1x3_channels):
+class Fire(nn.Module):
+    def __init__(self, in_channels, squeeze_channels, expend1x1_channels, expend1x3_channels):
         super(Fire, self).__init__()
         self.squeeze = nn.Conv2d(in_channels, squeeze_channels, kernel_size=1)
         self.squeeze_activation = nn.ReLU(inplace=True)
-        self.expend1x1 = nn.Conv2d(squeeze_channels, expand1x1_channels, kernel_size=1)
-        self.expand1x1_activation = nn.ReLU(inplace=True)
-        self.expend1x3 = nn.Conv2d(squeeze_channels, expand1x3_channels, kernel_size=(1,3), padding=(0,1))
-        self.expand3x3_activation = nn.ReLU(inplace=True)
+        self.expend1x1 = nn.Conv2d(squeeze_channels, expend1x1_channels, kernel_size=1)
+        self.expend1x1_activation = nn.ReLU(inplace=True)
+        self.expend1x3 = nn.Conv2d(squeeze_channels, expend1x3_channels, kernel_size=(1,3), padding=(0,1))
+        self.expend1x3_activation = nn.ReLU(inplace=True)
 
     def forward(self, x):
         x = self.squeeze_activation(self.squeeze(x))
-        return torch.cat([self.expand1x1_activation(self.expand1x1(x)), self.expand3x3_activation(self.expand3x3(x))], 1)
+        return torch.cat([self.expend1x1_activation(self.expend1x1(x)), self.expend1x3_activation(self.expend1x3(x))], 1)
 
 class VAMetric(nn.Module):
     def __init__(self):
@@ -60,19 +60,32 @@ class VAMetric(nn.Module):
 
     def forward(self, vfeat, afeat):
         vfeat = vfeat.contiguous()
-        vfeat = vfeat.view(vfeat.size(0), 1, vfeat.size(2), vfeat.size(1))
+        vfeat = vfeat.view(vfeat.size(0), 1, vfeat.size(1), vfeat.size(2))
         afeat = afeat.contiguous()
-        afeat = afeat.view(afeat.size(0), 1, afeat.size(2), afeat.size(1))
+        afeat = afeat.view(afeat.size(0), 1, afeat.size(1), afeat.size(2))
         avfeat = torch.cat([afeat,vfeat], 2)
-        avfeat = F.relu(self.Final_cov(self.Final_avg(self.time_feat(avfeat))))#batchsize*1152*1*2
-        afeat = avfeat[:, :, 0:127, :]
+        avfeat = self.time_feat(avfeat)
+        avfeat = self.Final_avg(avfeat)
+        avfeat = self.Final_cov(avfeat)
+        avfeat = F.relu(avfeat)                    #batchsize*1152*1*2
+        afeat = avfeat[:, :, 0:128, :]
         afeat = afeat.contiguous()
         afeat = afeat.view(-1, 256)
         vfeat = avfeat[:, :, 128:1152, :]
         vfeat = vfeat.contiguous()
         vfeat = vfeat.view(-1, 2048)
-        afeat = nn.ReLU(self.afeat_fc_2(self.afeat_BN_2(nn.ReLU(nn.Dropout(self.afeat_fc_1(self.afeat_BN_1(afeat))), inplace=True))), inplace=True)
-        vfeat = nn.ReLU(self.vfeat_fc_2(self.vfeat_BN_2(nn.ReLU(nn.Dropout(self.vfeat_fc_1(self.vfeat_BN_1(vfeat))), inplace=True))), inplace=True)
+        afeat = self.afeat_BN_1(afeat)
+        afeat = self.afeat_fc_1(afeat)
+        afeat = F.relu(afeat, inplace=True)
+        afeat = self.afeat_BN_2(afeat)
+        afeat = self.afeat_fc_2(afeat)
+        afeat = F.relu(afeat, inplace=True)
+        vfeat = self.vfeat_BN_1(vfeat)
+        vfeat = self.vfeat_fc_1(vfeat)
+        vfeat = F.relu(vfeat, inplace=True)
+        vfeat = self.vfeat_BN_2(vfeat)
+        vfeat = self.vfeat_fc_2(vfeat)
+        vfeat = F.relu(vfeat, inplace=True)
         return F.pairwise_distance(vfeat, afeat)
 
 class ContrastiveLoss(torch.nn.Module):
