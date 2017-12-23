@@ -1,67 +1,66 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-import argparse
-import random
-import time
 import os
-import numpy as np
+import argparse
 from optparse import OptionParser
-
-import torch
-import torch.backends.cudnn as cudnn
-import torch.optim as optim
-from torch.autograd import Variable
-from torch.optim.lr_scheduler import LambdaLR as LR_Policy
-
-import model_3  as modell                      ########
-from dataset import VideoFeatDataset as dset
 from tools.config_tools import Config
-from tools import utils
 
+#----------------------------------- loading paramters -------------------------------------------#
 parser = OptionParser()
 parser.add_option('--config',
                   type=str,
-                  help="training configuration",
+                  help="evaluation configuration",
                   default="./configs/train_config.yaml")
-
 (opts, args) = parser.parse_args()
 assert isinstance(opts, object)
 opt = Config(opts.config)
 print(opt)
+#--------------------------------------------------------------------------------------------------#
 
-if opt.checkpoint_folder is None:
-    opt.checkpoint_folder = 'checkpoints'
+#------------------ environment variable should be set before import torch  -----------------------#
+if opt.cuda:
+    os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
+    os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpu_id
+    print('setting gpu on gpuid {0}'.format(opt.gpu_id))
+#--------------------------------------------------------------------------------------------------#
 
-# make dir
-if not os.path.exists(opt.checkpoint_folder):
-    os.system('mkdir {0}'.format(opt.checkpoint_folder))
+import random
+import time
+import numpy as np
+import torch
+import torch.backends.cudnn as cudnn
+import torch.optim as optim
+from torch.autograd import Variable
 
-train_dataset = dset(opt.data_dir, flist=opt.flist)
+import models
+from dataset import VideoFeatDataset as dset
+from tools import utils
 
-
-
-print('number of train samples is: {0}'.format(len(train_dataset)))
-print('finished loading data')
-
-
-if opt.manualSeed is None:
-    opt.manualSeed = random.randint(1, 10000)
 
 if torch.cuda.is_available() and not opt.cuda:
     print("WARNING: You have a CUDA device, so you should probably run with \"cuda: True\"")
-    torch.manual_seed(opt.manualSeed)
-else:
-    if int(opt.ngpu) == 1:
-        print('so we use 1 gpu to training')
-        print('setting gpu on gpuid {0}'.format(opt.gpu_id))
 
-        if opt.cuda:
-            os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpu_id
-            torch.cuda.manual_seed(opt.manualSeed)
-            cudnn.benchmark = True
+# setting the random seed
+if opt.manualSeed is None:
+    opt.manualSeed = random.randint(1, 10000)
+if opt.cuda and torch.cuda.is_available():
+    cudnn.benchmark = True
+    torch.cuda.manual_seed(opt.manualSeed)
+else:
+    torch.manual_seed(opt.manualSeed)
 print('Random Seed: {0}'.format(opt.manualSeed))
 
+# make checkpoint folder
+if opt.checkpoint_folder is None:
+    opt.checkpoint_folder = 'checkpoints'
+if not os.path.exists(opt.checkpoint_folder):
+    os.system('mkdir {0}'.format(opt.checkpoint_folder))
+
+# loading dataset
+train_dataset = dset(opt.data_dir, flist=opt.flist)
+print('number of train samples is: {0}'.format(len(train_dataset)))
+print('finished loading data')
 
 # training function for metric learning
 def train(train_loader, model, criterion, optimizer, epoch, opt):
@@ -102,11 +101,6 @@ def train(train_loader, model, criterion, optimizer, epoch, opt):
         # concat the labels together
         target = torch.cat((target2, target1), 0)
         target = 1 - target
-
-        # transpose the feats
-
-        vfeat0 = vfeat0.transpose(2, 1)
-        afeat0 = afeat0.transpose(2, 1)
 
         # put the data into Variable
         vfeat_var = Variable(vfeat0)
@@ -154,23 +148,27 @@ def LR_Policy(optimizer, init_lr, policy):
     for param_group in optimizer.param_groups:
         param_group['lr'] = init_lr * policy
 
-# main function for training the model
 def main():
     global opt
     # train data loader
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=opt.batchSize,   #生成了一个数据集的迭代器，并且已经洗牌
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=opt.batchSize,
                                      shuffle=True, num_workers=int(opt.workers))
 
     # create model
-    model = modell.VAMetric()
-    print(model)
+    if opt.model is 'VAMetric':
+        model = models.VAMetric()
+    elif opt.model is 'VAMetric2':
+        model = models.VAMetric2()
+    else:
+        model = models.VAMetric()
+        opt.model = 'VAMetric'
 
     if opt.init_model != '':
         print('loading pretrained model from {0}'.format(opt.init_model))
         model.load_state_dict(torch.load(opt.init_model))
 
     # Contrastive Loss
-    criterion = modell.ContrastiveLoss()
+    criterion = models.ContrastiveLoss()
 
     if opt.cuda:
         print('shift model and criterion to GPU .. ')
@@ -178,7 +176,9 @@ def main():
         criterion = criterion.cuda()
 
     # optimizer
-    optimizer = optim.Adam(model.parameters(), opt.lr, weight_decay=opt.weight_decay)
+    optimizer = optim.SGD(model.parameters(), opt.lr,
+                                momentum=opt.momentum,
+                                weight_decay=opt.weight_decay)
 
     # adjust learning rate every lr_decay_epoch
     lambda_lr = lambda epoch: opt.lr_decay ** ((epoch + 1) // opt.lr_decay_epoch)   #poly policy
@@ -191,11 +191,13 @@ def main():
         LR_Policy(optimizer, opt.lr, lambda_lr(epoch))      # adjust learning rate through poly policy
 
         ##################################
-        # save checkpoint every 10 epochs
+        # save checkpoints
         ##################################
+
+        # save model every 10 epochs
         if ((epoch+1) % opt.epoch_save) == 0:
-            path_checkpoint = '{0}/{1}_state_epoch{2}.pth'.format(opt.checkpoint_folder, opt.prefix, epoch+1)
-            utils.save_checkpoint(model.state_dict(), path_checkpoint)
+            path_checkpoint = '{0}/{1}_state_epoch{2}.pth'.format(opt.checkpoint_folder, opt.model, epoch+1)
+            utils.save_checkpoint(model, path_checkpoint)
 
 if __name__ == '__main__':
     main()
