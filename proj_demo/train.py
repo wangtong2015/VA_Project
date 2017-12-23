@@ -33,7 +33,7 @@ import torch.backends.cudnn as cudnn
 import torch.optim as optim
 from torch.autograd import Variable
 
-import models
+import model_3 as models
 from dataset import VideoFeatDataset as dset
 from tools import utils
 
@@ -176,8 +176,8 @@ def main():
         criterion = criterion.cuda()
 
     # optimizer
-    optimizer = optim.SGD(model.parameters(), opt.lr,
-                                momentum=opt.momentum,
+    optimizer = optim.Adam(model.parameters(), opt.lr,
+                   
                                 weight_decay=opt.weight_decay)
 
     # adjust learning rate every lr_decay_epoch

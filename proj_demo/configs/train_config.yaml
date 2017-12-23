@@ -1,4 +1,4 @@
-cuda: True
+cuda: False
 ngpu: 1
 gpu_id: '0'
 model: 'VAMetric'
@@ -6,7 +6,7 @@ init_model: ''
 data_dir: './Train'         # replace it with your data path
 flist: './filelists/train_filelist.txt'
 workers: 4
-batchSize: 64
+batchSize: 128
 manualSeed: 
 adam: True
 lr: 0.001
@@ -15,7 +15,7 @@ lr_decay_epoch: 10
 momentum: 0.9
 weight_decay: 0.0001
 max_epochs: 300
-print_freq: 15
-epoch_save: 10
+print_freq: 5
+epoch_save: 5
 checkpoint_folder: './checkpoints'
 gradient_clip: 0.01
