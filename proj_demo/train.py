@@ -14,7 +14,7 @@ import torch.optim as optim
 from torch.autograd import Variable
 from torch.optim.lr_scheduler import LambdaLR as LR_Policy
 
-import model_covnv1d_squeeze  as modell                      ########
+import model_3  as modell                      ########
 from dataset import VideoFeatDataset as dset
 from tools.config_tools import Config
 from tools import utils
@@ -178,9 +178,7 @@ def main():
         criterion = criterion.cuda()
 
     # optimizer
-    optimizer = optim.SGD(model.parameters(), opt.lr,
-                                momentum=opt.momentum,
-                                weight_decay=opt.weight_decay)
+    optimizer = optim.Adam(model.parameters(), opt.lr, weight_decay=opt.weight_decay)
 
     # adjust learning rate every lr_decay_epoch
     lambda_lr = lambda epoch: opt.lr_decay ** ((epoch + 1) // opt.lr_decay_epoch)   #poly policy
