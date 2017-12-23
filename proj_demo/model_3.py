@@ -28,9 +28,9 @@ class VAMetric(nn.Module):
                     m.bias.data.zero_()
     def forward(self, vfeat, afeat):
         vfeat = vfeat.contiguous()
-        vfeat = vfeat.view(vfeat.size(0), 1, vfeat.size(1), vfeat.size(2))     #batch * 1 * 1024 * 120
+        vfeat = vfeat.view(vfeat.size(0), 1, vfeat.size(2), vfeat.size(1))     #batch * 1 * 1024 * 120
         afeat = afeat.contiguous()
-        afeat = afeat.view(afeat.size(0), 1, afeat.size(1), afeat.size(2))
+        afeat = afeat.view(afeat.size(0), 1, afeat.size(2), afeat.size(1))
         vfeat = self.vfeat_fc_1(vfeat)                                   #batch * 256 * 1 * 120
         vfeat = torch.transpose(vfeat, 1, 2)                             #batch * 1 * 256 * 120
         vfeat = F.relu(vfeat, inplace= True)
