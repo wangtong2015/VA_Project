@@ -33,7 +33,7 @@ import torch.backends.cudnn as cudnn
 import torch.optim as optim
 from torch.autograd import Variable
 
-import model_3 as models
+import model_3_2 as models
 from dataset import VideoFeatDataset as dset
 from tools import utils
 
@@ -79,24 +79,24 @@ def train(train_loader, model, criterion, optimizer, epoch, opt):
         bz = vfeat.size()[0]
         orders = np.arange(bz).astype('int32')
         shuffle_orders = orders.copy()
-        shuffle_orders_1 = orders.copy()
+        #shuffle_orders_1 = orders.copy()
         np.random.shuffle(shuffle_orders)
-        np.random.shuffle(shuffle_orders_1)
+        #np.random.shuffle(shuffle_orders_1)
 
         # creating a new data with the shuffled indices
         afeat2 = afeat[torch.from_numpy(shuffle_orders).long()].clone()
-        afeat3 = afeat[torch.from_numpy(shuffle_orders_1).long()].clone()
+        #afeat3 = afeat[torch.from_numpy(shuffle_orders_1).long()].clone()
 
         # concat the vfeat and afeat respectively
-        afeat0 = torch.cat((afeat, afeat2, afeat3), 0)
-        vfeat0 = torch.cat((vfeat, vfeat, vfeat), 0)
+        afeat0 = torch.cat((afeat, afeat2), 0)
+        vfeat0 = torch.cat((vfeat, vfeat), 0)
 
         # generating the labels
         # 1. the labels for the shuffled feats
         label1 = (orders == shuffle_orders + 0).astype('float32')
-        label1_1 = (orders == shuffle_orders_1 + 0).astype('float32')
+        #label1_1 = (orders == shuffle_orders_1 + 0).astype('float32')
         target1 = torch.from_numpy(label1)
-        target1_1 = torch.from_numpy(label2)
+        #target1_1 = torch.from_numpy(label2)
 
         # 2. the labels for the original feats
         label2 = label1.copy()
@@ -104,7 +104,7 @@ def train(train_loader, model, criterion, optimizer, epoch, opt):
         target2 = torch.from_numpy(label2)
 
         # concat the labels together
-        target = torch.cat((target2, target1, target1_1), 0)
+        target = torch.cat((target2, target1), 0)
         target = 1 - target
 
         # put the data into Variable
