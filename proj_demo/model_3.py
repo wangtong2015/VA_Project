@@ -7,6 +7,7 @@ import torch.nn.functional as F
 class VAMetric(nn.Module):
     def __init__(self):
         super(VAMetric, self).__init__()
+        self.training = True
         self.vfeat_fc_1 = nn.Conv2d(1, 256, kernel_size=(1024, 1))
         self.vfeat_fc_2 = nn.Conv2d(1, 64, kernel_size=(256, 1))
         self.vfeat_fc_3 = nn.Conv2d(1, 16, kernel_size=(64,1))
@@ -32,9 +33,11 @@ class VAMetric(nn.Module):
         afeat = afeat.contiguous()
         afeat = afeat.view(afeat.size(0), 1, afeat.size(2), afeat.size(1))
         vfeat = self.vfeat_fc_1(vfeat)                                   #batch * 256 * 1 * 120
+        vfeat = F.dropout(vfeat, training=self.training)
         vfeat = torch.transpose(vfeat, 1, 2)                             #batch * 1 * 256 * 120
         vfeat = F.relu(vfeat, inplace= True)
         vfeat = self.vfeat_fc_2(vfeat)                                   #batch * 64 * 1  * 120
+        vfeat = F.dropout(vfeat,p=0.65, training=self.training)
         vfeat = torch.transpose(vfeat, 1, 2)                             #batch * 1 * 64 * 120
         vfeat = F.relu(vfeat, inplace= True)
         vfeat = self.vfeat_fc_3(vfeat)                                   #batch * 16* 1 * 120
@@ -47,9 +50,11 @@ class VAMetric(nn.Module):
         vfeat = vfeat.view(-1, 480)
 
         afeat = self.afeat_fc_1(afeat)                                   #batch * 64 * 1 * 120
+        afeat = F.dropout(afeat, training=self.training)
         afeat = torch.transpose(afeat, 1, 2)                             #batch * 1 * 64 * 120
         afeat = F.relu(afeat, inplace= True)
         afeat = self.afeat_fc_2(afeat)                                   #batch * 32 * 1  * 120
+        afeat = F.dropout(afeat, training=self.training, p=0.65)
         afeat = torch.transpose(afeat, 1, 2)                             #batch * 1 * 32 * 120
         afeat = F.relu(afeat, inplace= True)
         afeat = self.afeat_fc_3(afeat)                                   #batch * 12* 1 * 120
