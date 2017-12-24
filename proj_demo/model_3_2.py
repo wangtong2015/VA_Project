@@ -5,10 +5,10 @@ import torch.nn.functional as F
 class VAMetric(nn.Module):
     def __init__(self):
         super(VAMetric, self).__init__()
-        self.vfeat_fc_1 = nn.Conv2d(1, 256, kernel_size=(1024, 1))
-        self.vfeat_fc_2 = nn.Conv2d(1, 128, kernel_size=(256, 1))
+        self.vfeat_fc_1 = nn.Conv2d(1, 1, kernel_size=(1024, 1))
+        #self.vfeat_fc_2 = nn.Conv2d(1, 128, kernel_size=(256, 1))
 
-        self.afeat_fc_1 = nn.Conv2d(1, 128, kernel_size=(128, 1))
+        self.afeat_fc_1 = nn.Conv2d(1, 1, kernel_size=(128, 1))
         #attention::now no dropout do check overfitting
     def init_params(self):
         for m in self.modules():
@@ -26,18 +26,18 @@ class VAMetric(nn.Module):
         afeat = afeat.view(afeat.size(0), 1, afeat.size(2), afeat.size(1))
         vfeat = self.vfeat_fc_1(vfeat)                                   #batch * 256 * 1 * 120
         vfeat = torch.transpose(vfeat, 1, 2)                             #batch * 1 * 256 * 120
-        vfeat = F.relu(vfeat, inplace= True)
-        vfeat = self.vfeat_fc_2(vfeat)                                   #batch * 128 * 1  * 120
-        vfeat = torch.transpose(vfeat, 1, 2)                             #batch * 1 * 128 * 120
-        vfeat = F.relu(vfeat, inplace= True)
+        vfeat = F.sigmoid(vfeat)
+        #vfeat = self.vfeat_fc_2(vfeat)                                   #batch * 128 * 1  * 120
+        #vfeat = torch.transpose(vfeat, 1, 2)                             #batch * 1 * 128 * 120
+        #vfeat = F.relu(vfeat, inplace= True)
         vfeat = vfeat.contiguous()
-        vfeat = vfeat.view(-1, 15360)
+        vfeat = vfeat.view(-1, 120)
 
         afeat = self.afeat_fc_1(afeat)                                   #batch * 128 * 1 * 120
         afeat = torch.transpose(afeat, 1, 2)                             #batch * 1 * 128 * 120
-        afeat = F.relu(afeat, inplace= True)
+        afeat = F.sigmoid(afeat)
         afeat = afeat.contiguous()
-        afeat = afeat.view(-1, 15360)
+        afeat = afeat.view(-1, 120)
         return F.pairwise_distance(vfeat, afeat)
 
 class ContrastiveLoss(torch.nn.Module):
