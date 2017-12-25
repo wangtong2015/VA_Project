@@ -73,11 +73,13 @@ class VAMetric(nn.Module):
         super(VAMetric, self).__init__()
         self.VFeatPool = FeatAggregate(1024, 256)  #batch* 120 *256
         self.AFeatPool = FeatAggregate(128, 128)   #batch* 120 *128
-        self.cov_1 = nn.Conv2d(3, 32, kernel_size=(5,5), padding=(2, 2), stride=(2,2))  #batch*32*60*64
-        self.mpool_0 = nn.MaxPool2d(kernel_size=(3,3), padding=(1,1), stride=(2,2))     #batch*32*30*32
-        self.inception_1 = inception(in_channels=32,num_1=32,num_3_1=48,num_3=64,num_5_1=8,num_5=16,num_m=16) #batch*128*30*32
-        self.mpool_1 = nn.MaxPool2d(kernel_size=(3,3), padding=(1,1), stride=(2,2))     #batch*128*15*16
-        self.inception_2 = inception(in_channels=128,num_1=40,num_3_1=64,num_3=80,num_5_1=10,num_5=20,num_m=20) #batch*160*15*16
+        self.cov_0 = nn.Conv2d(3, 120, kernel_size=(3,128), padding=(1, 0))  #batch*120*120*1   batch*1*120*120
+        self.BN_0 = nn.BatchNorm2d(1)
+        self.cov_1 = nn.Conv2d(1, 32, kernel_size=(5,5), padding=2, stride=2) #batch*32*60*60
+        self.mpool_0 = nn.MaxPool2d(kernel_size=(3,3), padding=(1,1), stride=(2,2))     #batch*32*30*30
+        self.inception_1 = inception(in_channels=32,num_1=32,num_3_1=48,num_3=64,num_5_1=8,num_5=16,num_m=16) #batch*128*30*30
+        self.mpool_1 = nn.MaxPool2d(kernel_size=(3,3), padding=(1,1), stride=(2,2))     #batch*128*15*15
+        self.inception_2 = inception(in_channels=128,num_1=40,num_3_1=64,num_3=80,num_5_1=10,num_5=20,num_m=20) #batch*160*15*15
         # attention :: since inception block hold the size of the matric ,you can add more inception blocks
         self.mpool_2 = nn.MaxPool2d(kernel_size=(3,3), padding=(1,1), stride=(2,2))     #batch*160*8*8
         self.inception_3 = inception(in_channels=160,num_1=60,num_3_1=80,num_3=120,num_5_1=15,num_5=30,num_m=30) #batch*240*8*8
@@ -102,6 +104,10 @@ class VAMetric(nn.Module):
         afeat = afeat.contiguous()
         afeat = afeat.view(afeat.size(0), 1, afeat.size(1), afeat.size(2))
         avfeat = torch.cat((vfeat[:,:,:,0:128],vfeat[:,:,:,128:256],afeat), 1)
+        avfeat = self.cov_0(avfeat)
+        avfeat = avfeat.transpose(1,3)
+        avfeat = F.relu(avfeat)
+        avfeat = self.BN_0(avfeat)
         avfeat = self.cov_1(avfeat)
         avfeat = F.relu(avfeat, inplace=True)
         avfeat = self.mpool_0(avfeat)
