@@ -71,7 +71,7 @@ class VAMetric(nn.Module):
     def __init__(self):
         super(VAMetric, self).__init__()
         pretrained = model_6_3.VAMetric()
-        pretrained.load_state_dict(torch.load("./checkpoints/VA_METRIC_state_epoch40.pth"))
+        pretrained.load_state_dict(torch.load("./checkpoints/pretrained.pth"))
         self.conv_1 = nn.Conv2d(3,64,(3,128),(2,1),(1,0))         #batch* 64* 60 *1
         self.BN_1 = nn.BatchNorm2d(1)
         self.conv_2 = nn.Conv2d(1, 32, (5,5), 2, 2)               #batch*32*30*32
